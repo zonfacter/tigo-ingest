@@ -191,6 +191,7 @@ Hinweis zur Gesamtleistung:
 * Die Optimierer melden nicht alle gleichzeitig. Wenn man einfach alle `power_w` Werte in kleinen Zeitfenstern aufsummiert, wird es je nach Intervall zu hoch/zu niedrig.
 * Das Dashboard nutzt daher fuer die Gesamtleistung eine 1-Minuten Aggregation: pro Optimierer `mean(power_w)` je Minute, danach Summe ueber alle Optimierer.
 * Zusaetzlich gibt es ein Debug-Panel **\"Tigo Total Power RAW SUM (debug)\"** das die naive Variante `sum(power_w)` zeigt, um Abweichungen schnell zu erkennen.
+* Es gibt ein Panel **\"Reports Per Node (count/min)\"**, das pro `node_id` zeigt, wie viele Reports pro Minute ankommen. Nodes mit deutlich weniger Reports sind oft die Ursache fuer Abweichungen/\"fehlende\" Leistung.
 
 ## 14) Betrieb / Updates
 
