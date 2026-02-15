@@ -1,14 +1,12 @@
 # tigo-ingest
 
-Liest Messdaten von Tigo Optimierern ueber `taptap` (Tigo CCA / TAP seriell/RS485) und schreibt sie in InfluxDB (1.x).
+Tigo Optimizer Monitoring ueber RS485: `taptap observe` -> InfluxDB 1.x -> Grafana.
 
-Status: Minimaler Ingest fuer `power_report`-Events aus `taptap observe` (newline-delimited JSON) nach InfluxDB.
+![Grafana Dashboard Screenshot](docs/images/grafana.jpg)
 
-Vollstaendige Anleitung:
-* `tigo-ingest/docs/SETUP_DE.md`
-
-Quellen / Credits:
-* `tigo-ingest/docs/SOURCES.md`
+**Doku**
+* Setup (RS485, systemd, Influx, Grafana): `tigo-ingest/docs/SETUP_DE.md`
+* Quellen / Credits: `tigo-ingest/docs/SOURCES.md`
 
 ## Voraussetzungen
 
@@ -17,6 +15,13 @@ Quellen / Credits:
 * Zugriff auf die CCA/TAP Verbindung (RS485):
   * empfohlen: `--serial /dev/serial/by-id/...` (stabiler als `/dev/ttyUSB*`)
   * alternativ: `--tcp <ip>` fuer Serial-over-TCP Bridge (Port default 7160)
+
+## Was wird geschrieben
+
+InfluxDB Measurement (default): `tigo_power_report`
+
+* Tags: `src=tigo`, `gateway_id`, `node_id` (optional: `gateway_addr`, `node_addr`, `barcode`)
+* Fields: `voltage_in_v`, `voltage_out_v`, `current_in_a`, `power_w`, `current_out_a`, `duty_cycle`, `temperature_c`, `rssi`
 
 ## Quickstart (InfluxDB 1.x)
 
@@ -91,25 +96,6 @@ Alles laeuft ueber Umgebungsvariablen (oder `.env`):
   * `1` = nicht schreiben, nur loggen
 * `LOG_LEVEL`:
   * `INFO` (default), `DEBUG`
-
-## Influx Schema
-
-Measurement: `tigo_power_report` (konfigurierbar)
-
-Tags:
-* `src=tigo`
-* `gateway_id`, `gateway_addr`
-* `node_id`, `node_addr`
-* `barcode` (wenn vorhanden)
-
-Fields:
-* `voltage_in_v`, `voltage_out_v`
-* `current_in_a`
-* `power_w` (berechnet aus `voltage_in * current_in`)
-* `current_out_a` (berechnet aus `power_w / voltage_out`, wenn `voltage_out != 0`)
-* `duty_cycle`
-* `temperature_c`
-* `rssi`
 
 ## Hinweise
 
