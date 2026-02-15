@@ -247,6 +247,20 @@ Influx erreichbar:
 curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8086/ping
 ```
 
+### Schlechte Nodes (RSSI / unregelmaessige Reports) finden
+
+Praktisch ist nicht nur der RSSI-Wert selbst, sondern vor allem, welche `node_id` **deutlich weniger Reports** liefert als der Rest.
+
+Script (fragt InfluxDB ab und listet auffaellige Nodes):
+```bash
+cd ~/tigo-ingest
+./scripts/rssi_report.py --hours 24 --top 15
+```
+
+Es zeigt:
+* niedrigste Report-Counts (haeufig die Ursache fuer \"fehlende\" Leistung)
+* hoechste/niedrigste RSSI-Mittelwerte zum Vergleich
+
 ## Quellen / Credits
 
 Siehe `docs/SOURCES.md`.
