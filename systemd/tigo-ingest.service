@@ -1,0 +1,19 @@
+[Unit]
+Description=Tigo TAPTAP -> InfluxDB Ingest
+After=network-online.target influxdb.service
+Wants=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=black
+WorkingDirectory=/home/black/tigo-ingest
+Environment=HOME=/home/black
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=/home/black/tigo-ingest/.env
+ExecStart=/home/black/tigo-ingest/run.sh
+Restart=on-failure
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target
