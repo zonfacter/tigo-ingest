@@ -1,12 +1,17 @@
 # tigo-ingest
 
-Tigo Optimizer Monitoring ueber RS485: `taptap observe` -> InfluxDB 1.x -> Grafana.
+DE: Tigo Optimizer Monitoring ueber RS485: `taptap observe` -> InfluxDB 1.x -> Grafana.
+
+EN: Tigo optimizer monitoring via RS485: `taptap observe` -> InfluxDB 1.x -> Grafana.
 
 ![Grafana Dashboard Screenshot](docs/images/grafana.jpg)
 
 **Doku**
 * Setup (ausfuehrlich, RS485, systemd, Influx, Grafana): `tigo-ingest/docs/SETUP_DE.md`
 * Quellen / Credits: `tigo-ingest/docs/SOURCES.md`
+
+**Versionierung**
+* Releases/Tags ab `v1.0.0` (siehe GitHub Releases)
 
 ## Voraussetzungen
 
