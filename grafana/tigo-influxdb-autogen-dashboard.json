@@ -192,16 +192,16 @@
         {
           "groupBy": [
             {
+              "type": "time",
               "params": [
-                "$__interval"
-              ],
-              "type": "time"
+                "1m"
+              ]
             }
           ],
           "measurement": "tigo_power_report",
           "orderByTime": "ASC",
           "policy": "autogen",
-          "query": "SELECT sum(\"power_w\") FROM \"autogen\".\"tigo_power_report\" WHERE $timeFilter AND \"gateway_id\" =~ /^$gateway_id$/ AND \"node_id\" =~ /^$node_id$/ GROUP BY time($__interval) fill(null)",
+          "query": "SELECT sum(\"m\") FROM (SELECT mean(\"power_w\") AS \"m\" FROM \"autogen\".\"tigo_power_report\" WHERE $timeFilter AND \"gateway_id\" =~ /^$gateway_id$/ AND \"node_id\" =~ /^$node_id$/ GROUP BY time(1m),\"node_id\" fill(null)) GROUP BY time(1m) fill(null)",
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series",

@@ -186,6 +186,11 @@ Dashboard Variablen:
 * `gateway_id` (All oder spezifisch)
 * `node_id` (All oder Filter auf einzelne Optimierer)
 
+Hinweis zur Gesamtleistung:
+
+* Die Optimierer melden nicht alle gleichzeitig. Wenn man einfach alle `power_w` Werte in kleinen Zeitfenstern aufsummiert, wird es je nach Intervall zu hoch/zu niedrig.
+* Das Dashboard nutzt daher fuer die Gesamtleistung eine 1-Minuten Aggregation: pro Optimierer `mean(power_w)` je Minute, danach Summe ueber alle Optimierer.
+
 ## 14) Betrieb / Updates
 
 Update aus GitHub:
@@ -244,4 +249,3 @@ curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8086/ping
 ## Quellen / Credits
 
 Siehe `docs/SOURCES.md`.
-
