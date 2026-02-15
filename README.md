@@ -5,7 +5,7 @@ Tigo Optimizer Monitoring ueber RS485: `taptap observe` -> InfluxDB 1.x -> Grafa
 ![Grafana Dashboard Screenshot](docs/images/grafana.jpg)
 
 **Doku**
-* Setup (RS485, systemd, Influx, Grafana): `tigo-ingest/docs/SETUP_DE.md`
+* Setup (ausfuehrlich, RS485, systemd, Influx, Grafana): `tigo-ingest/docs/SETUP_DE.md`
 * Quellen / Credits: `tigo-ingest/docs/SOURCES.md`
 
 ## Voraussetzungen

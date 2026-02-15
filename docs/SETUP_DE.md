@@ -1,20 +1,34 @@
 # Tigo RS485 -> InfluxDB + Grafana (tigo-ingest)
 
-Diese Anleitung beschreibt ein Setup auf dem Raspberry Pi:
+Diese Anleitung beschreibt ein Setup (z.B. Raspberry Pi), um Tigo Optimierer-Daten aus einem RS485-Bus auszulesen und in InfluxDB zu speichern.
 
-* Datenquelle: Tigo CCA/Gateway RS485 (Sniff/Monitor) via USB-RS485 Adapter
-* Decoder: `taptap observe` (JSON Lines)
-* Ingest: `tigo-ingest` schreibt nach InfluxDB 1.x (`bms`, RP default `autogen`)
-* Visualisierung: Grafana Dashboard Import JSON
+Kurz: `taptap observe` (RS485 sniff) -> `tigo-ingest` -> InfluxDB 1.x -> Grafana.
 
 ## 1) Voraussetzungen
 
-* InfluxDB 1.x (InfluxQL) laeuft lokal: `http://127.0.0.1:8086`
-* Grafana laeuft und hat eine InfluxDB (InfluxQL) Datasource auf die DB `bms`
-* Python 3.11+
-* USB-RS485 Adapter (empfohlen FTDI) am Pi
+* Linux Host mit `systemd` (empfohlen) und Python 3.11+
+* USB-RS485 Adapter (empfohlen FTDI; funktioniert auch CH34x)
+* InfluxDB 1.x (InfluxQL) erreichbar, z.B. `http://127.0.0.1:8086`
+* Grafana mit InfluxDB (InfluxQL / InfluxDB 1.x) Datasource auf DB `bms`
 
-## 2) RS485 Verkabelung (parallel sniffen)
+Pakete (Debian/RPi OS):
+```bash
+sudo apt-get update
+sudo apt-get install -y curl git pkg-config libudev-dev
+```
+
+## 2) Architektur (Kurz)
+
+```text
+Tigo Gateway/CCA RS485 Bus  -->  USB-RS485 Adapter  -->  taptap observe (JSONL)
+                                                      -->  tigo-ingest (Influx line protocol)
+                                                      -->  InfluxDB 1.x (DB=bms, RP=autogen)
+                                                      -->  Grafana Dashboard
+```
+
+Hinweis: In diesem Setup ist RS485/USB der Weg. Das Gateway bietet i.d.R. nur HTTP an, aber keinen Serial-over-TCP Dienst.
+
+## 3) RS485 Verkabelung (parallel sniffen)
 
 Du klemmst den RS485-Adapter parallel an den Gateway-RS485 Port (Bus bleibt in Betrieb):
 
@@ -26,40 +40,51 @@ Du klemmst den RS485-Adapter parallel an den Gateway-RS485 Port (Bus bleibt in B
 
 Wenn keine Daten kommen: A/B einmal tauschen.
 
-## 3) `taptap` installieren
+## 4) Benutzerrechte (Serial Zugriff)
 
-Auf Debian/Raspberry Pi ist das `cargo` aus `apt` oft zu alt fuer `taptap`.
-Empfohlen: Rust via `rustup`.
+Der User, der `tigo-ingest` ausfuehrt, braucht Zugriff auf serielle Devices. Auf Debian ist das i.d.R. Gruppe `dialout`.
 
 ```bash
-sudo apt-get update
-sudo apt-get install -y curl pkg-config libudev-dev
+id
+groups
+sudo usermod -aG dialout "$USER"
+# Danach einmal neu einloggen.
+```
 
+## 5) `taptap` installieren (Decoder/CLI)
+
+Auf Debian/RPi OS ist `cargo` aus `apt` oft zu alt fuer `taptap`. Empfohlen ist Rust via `rustup`:
+
+```bash
 curl -fsSL https://sh.rustup.rs | sh -s -- -y --profile minimal
-. $HOME/.cargo/env
+. "$HOME/.cargo/env"
 
 cargo install taptap --locked
 taptap --help
 ```
 
-## 4) Projekt installieren
+## 6) Repo holen und Python Umgebung
 
 ```bash
-cd /home/black/tigo-ingest
+cd ~
+git clone https://github.com/zonfacter/tigo-ingest.git
+cd tigo-ingest
+
 python3 -m venv .venv
 . .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## 5) Serial Device finden
+## 7) RS485 Adapter/Port finden (stabiler Pfad)
 
+Serial Ports anzeigen:
 ```bash
-. $HOME/.cargo/env
+. "$HOME/.cargo/env"
 taptap list-serial-ports
 ls -la /dev/serial/by-id/
 ```
 
-Empfehlung: immer den stabilen Pfad `/dev/serial/by-id/...` verwenden, nicht `/dev/ttyUSB*`.
+Empfehlung: immer `/dev/serial/by-id/...` verwenden, nicht `/dev/ttyUSB*` (USB-Hubs aendern sonst gern die Nummern).
 
 Wenn ein Port "busy" ist:
 ```bash
@@ -68,34 +93,60 @@ sudo fuser -v /dev/ttyUSB1 || true
 sudo fuser -v /dev/ttyUSB2 || true
 ```
 
-## 6) `tigo-ingest` konfigurieren
+## 8) InfluxDB vorbereiten (einmalig)
+
+Wenn du die DB schon hast (z.B. aus anderen Projekten), kannst du das ueberspringen.
 
 ```bash
-cd /home/black/tigo-ingest
+influx -execute 'CREATE DATABASE bms'
+influx -database bms -execute 'SHOW RETENTION POLICIES ON bms'
+```
+
+`tigo-ingest` schreibt standardmaessig in die Default-Retention `autogen` (unbegrenzt), solange `INFLUX_RP` leer ist.
+
+## 9) `tigo-ingest` konfigurieren (.env)
+
+```bash
+cd ~/tigo-ingest
 cp .env.example .env
 ```
 
-In `.env` setzen:
+In `~/tigo-ingest/.env` anpassen:
 
 * `TAPTAP_CMD="taptap observe --serial /dev/serial/by-id/<DEIN-ADAPTER>"`
+  * Tipp: Wenn `taptap` via rustup installiert ist, kann ein voller Pfad robuster sein:
+    * `TAPTAP_CMD="/home/<user>/.cargo/bin/taptap observe --serial ..."`
+* `INFLUX_URL=http://127.0.0.1:8086`
 * `INFLUX_DB=bms`
-* `INFLUX_RP=` (leer = DB default `autogen` = unbegrenzt)
+* `INFLUX_RP=` (leer = Default `autogen` = unbegrenzt)
 * `INFLUX_MEASUREMENT=tigo_power_report`
 
-## 7) Smoketest (vor systemd)
+## 10) Smoketest (vor systemd)
+
+Der Smoketest zeigt sofort, ob ueber RS485 JSON-Events reinkommen.
 
 ```bash
-cd /home/black/tigo-ingest
+cd ~/tigo-ingest
 sudo systemctl stop tigo-ingest.service || true
 ./scripts/rs485-smoketest.sh
 ```
 
-Erwartung: JSON-Zeilen mit Feldern wie `voltage_in`, `current`, `timestamp`, `dc_dc_duty_cycle`, ...
+Erwartung: JSON-Zeilen mit Feldern wie `timestamp`, `voltage_in`, `voltage_out`, `current`, `dc_dc_duty_cycle`, `temperature`, `rssi`.
 
-## 8) Als Dienst starten
+## 11) systemd Service installieren
 
+Im Repo liegt eine Beispiel-Unit: `systemd/tigo-ingest.service`.
+Wenn dein Install-Pfad oder User anders ist, passe darin diese Zeilen an:
+
+* `User=...`
+* `WorkingDirectory=...`
+* `EnvironmentFile=...`
+* `ExecStart=...`
+
+Install + Start:
 ```bash
-sudo cp /home/black/tigo-ingest/systemd/tigo-ingest.service /etc/systemd/system/tigo-ingest.service
+cd ~/tigo-ingest
+sudo cp ./systemd/tigo-ingest.service /etc/systemd/system/tigo-ingest.service
 sudo systemctl daemon-reload
 sudo systemctl enable --now tigo-ingest.service
 systemctl status --no-pager -n 20 tigo-ingest.service
@@ -106,18 +157,23 @@ Logs:
 journalctl -u tigo-ingest.service -f
 ```
 
-## 9) Influx Verifikation
+## 12) Influx Verifikation
 
 ```bash
 influx -database bms -execute 'SHOW MEASUREMENTS' | rg tigo
 influx -database bms -execute 'SELECT * FROM autogen.tigo_power_report ORDER BY time DESC LIMIT 5'
 ```
 
-## 10) Grafana Dashboard importieren
+## 13) Grafana Dashboard importieren
 
-Datei:
+Grafana Datasource (InfluxQL / InfluxDB 1.x) muss auf DB `bms` zeigen:
 
-* `tigo-ingest/grafana/tigo-influxdb-autogen-dashboard.json`
+* URL: `http://<influx-host>:8086`
+* Database: `bms`
+
+Dashboard JSON:
+
+* `grafana/tigo-influxdb-autogen-dashboard.json`
 
 Import:
 
@@ -130,9 +186,14 @@ Dashboard Variablen:
 * `gateway_id` (All oder spezifisch)
 * `node_id` (All oder Filter auf einzelne Optimierer)
 
-## Quellen / Credits
+## 14) Betrieb / Updates
 
-Siehe `tigo-ingest/docs/SOURCES.md`.
+Update aus GitHub:
+```bash
+cd ~/tigo-ingest
+git pull
+sudo systemctl restart tigo-ingest.service
+```
 
 ## Influx Schema (Measurement `tigo_power_report`)
 
@@ -150,3 +211,37 @@ Fields:
 * `duty_cycle`
 * `temperature_c`
 * `rssi`
+
+## Troubleshooting
+
+### Smoketest liefert keine JSON-Zeilen
+
+* A/B vertauscht: einmal tauschen.
+* Falscher RS485-Port am Gateway: am richtigen Port parallel anschliessen.
+* Falsches Device: by-id Pfad verwenden (`/dev/serial/by-id/...`).
+* USB-Hub: `ttyUSB*` Nummern koennen sich aendern.
+
+### `Device or resource busy`
+
+```bash
+sudo fuser -v /dev/ttyUSB0 || true
+sudo fuser -v /dev/ttyUSB1 || true
+sudo fuser -v /dev/ttyUSB2 || true
+```
+
+### Service laeuft, aber nichts in Influx
+
+Logs:
+```bash
+journalctl -u tigo-ingest.service -n 200 --no-pager
+```
+
+Influx erreichbar:
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8086/ping
+```
+
+## Quellen / Credits
+
+Siehe `docs/SOURCES.md`.
+
