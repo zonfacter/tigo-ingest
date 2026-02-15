@@ -7,6 +7,9 @@ Status: Minimaler Ingest fuer `power_report`-Events aus `taptap observe` (newlin
 Vollstaendige Anleitung:
 * `tigo-ingest/docs/SETUP_DE.md`
 
+Quellen / Credits:
+* `tigo-ingest/docs/SOURCES.md`
+
 ## Voraussetzungen
 
 * Python 3.11+

@@ -130,6 +130,10 @@ Dashboard Variablen:
 * `gateway_id` (All oder spezifisch)
 * `node_id` (All oder Filter auf einzelne Optimierer)
 
+## Quellen / Credits
+
+Siehe `tigo-ingest/docs/SOURCES.md`.
+
 ## Influx Schema (Measurement `tigo_power_report`)
 
 Tags:
@@ -146,4 +150,3 @@ Fields:
 * `duty_cycle`
 * `temperature_c`
 * `rssi`
-
