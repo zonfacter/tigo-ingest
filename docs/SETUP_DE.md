@@ -157,6 +157,35 @@ Logs:
 journalctl -u tigo-ingest.service -f
 ```
 
+## 11b) Optional: automatischer Health-Check (Timer)
+
+Damit ein Ausfall wie am 16.02.2026 schnell auffaellt, gibt es einen periodischen Check:
+
+* Script: `scripts/tigo_healthcheck.py`
+* Unit: `systemd/tigo-ingest-healthcheck.service`
+* Timer: `systemd/tigo-ingest-healthcheck.timer` (alle 10 Minuten)
+
+Installation:
+```bash
+cd ~/tigo-ingest
+sudo cp ./systemd/tigo-ingest-healthcheck.service /etc/systemd/system/tigo-ingest-healthcheck.service
+sudo cp ./systemd/tigo-ingest-healthcheck.timer /etc/systemd/system/tigo-ingest-healthcheck.timer
+sudo systemctl daemon-reload
+sudo systemctl enable --now tigo-ingest-healthcheck.timer
+systemctl status --no-pager -n 20 tigo-ingest-healthcheck.timer
+```
+
+Manuell testen:
+```bash
+cd ~/tigo-ingest
+./scripts/tigo_healthcheck.py --service tigo-ingest.service --db bms --rp autogen --measurement tigo_power_report --max-lag-min 240
+```
+
+Log-Ausgabe:
+* `OK ...` = Dienst aktiv und letzte Punkte nicht zu alt
+* `CRIT stale_data ...` = Dienst aktiv, aber keine frischen Daten
+* `CRIT service_not_active ...` = Dienst nicht aktiv
+
 ## 12) Influx Verifikation
 
 ```bash

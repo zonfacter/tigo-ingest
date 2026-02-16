@@ -1,0 +1,12 @@
+[Unit]
+Description=Tigo Ingest Health Check
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=black
+WorkingDirectory=/home/black/tigo-ingest
+Environment=HOME=/home/black
+ExecStart=/home/black/tigo-ingest/.venv/bin/python /home/black/tigo-ingest/scripts/tigo_healthcheck.py --service tigo-ingest.service --db bms --rp autogen --measurement tigo_power_report --max-lag-min 240
+

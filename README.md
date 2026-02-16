@@ -13,6 +13,11 @@ EN: Tigo optimizer monitoring via RS485: `taptap observe` -> InfluxDB 1.x -> Gra
 **Versionierung**
 * Releases/Tags ab `v1.0.0` (siehe GitHub Releases)
 
+**Health Check**
+* Automatische Ingest-Pruefung per `systemd` Timer:
+  * `systemd/tigo-ingest-healthcheck.service`
+  * `systemd/tigo-ingest-healthcheck.timer`
+
 ## Voraussetzungen
 
 * Python 3.11+
@@ -51,6 +56,15 @@ sudo cp /home/black/tigo-ingest/systemd/tigo-ingest.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now tigo-ingest.service
 sudo systemctl status tigo-ingest.service
+```
+
+Health-Check aktivieren:
+```bash
+sudo cp /home/black/tigo-ingest/systemd/tigo-ingest-healthcheck.service /etc/systemd/system/tigo-ingest-healthcheck.service
+sudo cp /home/black/tigo-ingest/systemd/tigo-ingest-healthcheck.timer /etc/systemd/system/tigo-ingest-healthcheck.timer
+sudo systemctl daemon-reload
+sudo systemctl enable --now tigo-ingest-healthcheck.timer
+systemctl status --no-pager -n 20 tigo-ingest-healthcheck.timer
 ```
 
 ## RS485 Vorbereitung (empfohlen)

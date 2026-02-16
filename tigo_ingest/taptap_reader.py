@@ -22,9 +22,9 @@ def _parse_dt(s: str) -> datetime:
 class PowerReport:
     timestamp: datetime
     gateway_id: int
-    gateway_address: int | None
+    gateway_address: str | None
     node_id: int
-    node_address: int | None
+    node_address: str | None
     node_barcode: str | None
     voltage_in: float
     voltage_out: float
@@ -69,9 +69,9 @@ def parse_power_report(payload: dict) -> PowerReport:
     return PowerReport(
         timestamp=ts,
         gateway_id=int(gw["id"]),
-        gateway_address=int(gw["address"]) if "address" in gw and gw["address"] is not None else None,
+        gateway_address=_normalize_address(gw.get("address")),
         node_id=int(node["id"]),
-        node_address=int(node["address"]) if "address" in node and node["address"] is not None else None,
+        node_address=_normalize_address(node.get("address")),
         node_barcode=node.get("barcode"),
         voltage_in=float(payload["voltage_in"]),
         voltage_out=float(payload["voltage_out"]),
@@ -117,3 +117,16 @@ async def run_taptap_cmd(cmd: list[str]):
             except asyncio.TimeoutError:
                 proc.kill()
                 await proc.wait()
+    def _normalize_address(v) -> str | None:
+        if v is None:
+            return None
+        if isinstance(v, int):
+            return str(v)
+        # Newer taptap payloads may emit address as byte array, e.g. [4,192,...]
+        if isinstance(v, list):
+            try:
+                parts = [int(x) & 0xFF for x in v]
+                return "".join(f"{x:02x}" for x in parts)
+            except Exception:
+                return str(v)
+        return str(v)
