@@ -67,6 +67,14 @@ sudo systemctl enable --now tigo-ingest-healthcheck.timer
 systemctl status --no-pager -n 20 tigo-ingest-healthcheck.timer
 ```
 
+MQTT Status (optional, fuer Alerting):
+```bash
+cd /home/black/tigo-ingest
+cp -n .env.example .env
+sed -i 's/^TIGO_HEALTH_MQTT_ENABLED=.*/TIGO_HEALTH_MQTT_ENABLED=1/' .env
+# optional anpassen: Host/Topic/User/Pass
+```
+
 ## RS485 Vorbereitung (empfohlen)
 
 Serial Ports anzeigen:
@@ -115,6 +123,14 @@ Alles laeuft ueber Umgebungsvariablen (oder `.env`):
   * `1` = nicht schreiben, nur loggen
 * `LOG_LEVEL`:
   * `INFO` (default), `DEBUG`
+* `TIGO_HEALTH_MQTT_ENABLED`:
+  * `1` = Healthcheck sendet `OK/CRIT` JSON an MQTT Topic
+* `TIGO_HEALTH_MQTT_HOST` / `TIGO_HEALTH_MQTT_PORT` / `TIGO_HEALTH_MQTT_TOPIC`:
+  * Broker + Topic (default `127.0.0.1:1883`, `tigo/health`)
+* `TIGO_HEALTH_MQTT_USER` / `TIGO_HEALTH_MQTT_PASS`:
+  * optionaler Login fuer den Broker
+* `TIGO_HEALTH_MQTT_RETAIN`:
+  * `1` (default) = letzter Status retained
 
 ## Hinweise
 

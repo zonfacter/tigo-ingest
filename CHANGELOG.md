@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+* Neu: Health-Check kann Status als MQTT JSON (`OK`/`CRIT`) publizieren (`TIGO_HEALTH_MQTT_*`)
+* Service: `tigo-ingest-healthcheck.service` liest jetzt optional `.env` via `EnvironmentFile`
+* Doku: README + Setup um MQTT Alerting fuer Health-Check erweitert
+
 ## v1.1.0
 
 * Fix: Parser akzeptiert `gateway.address` / `node.address` auch als Byte-Array (kompatibel zu geaenderten `taptap` Payloads)

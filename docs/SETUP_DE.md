@@ -181,10 +181,31 @@ cd ~/tigo-ingest
 ./scripts/tigo_healthcheck.py --service tigo-ingest.service --db bms --rp autogen --measurement tigo_power_report --max-lag-min 240
 ```
 
+Optional MQTT Statusmeldungen aktivieren (`OK`/`CRIT`):
+```bash
+cd ~/tigo-ingest
+cp -n .env.example .env
+sed -i 's/^TIGO_HEALTH_MQTT_ENABLED=.*/TIGO_HEALTH_MQTT_ENABLED=1/' .env
+# optional: Host/Port/Topic/User/Pass in .env anpassen
+sudo systemctl daemon-reload
+sudo systemctl restart tigo-ingest-healthcheck.timer
+```
+
+Soforttest mit MQTT:
+```bash
+cd ~/tigo-ingest
+TIGO_HEALTH_MQTT_ENABLED=1 ./scripts/tigo_healthcheck.py --service tigo-ingest.service --db bms --rp autogen --measurement tigo_power_report --max-lag-min 240
+```
+
 Log-Ausgabe:
 * `OK ...` = Dienst aktiv und letzte Punkte nicht zu alt
 * `CRIT stale_data ...` = Dienst aktiv, aber keine frischen Daten
 * `CRIT service_not_active ...` = Dienst nicht aktiv
+
+MQTT Payload (JSON) enthaelt u.a.:
+* `status` (`OK`/`CRIT`)
+* `reason` (z.B. `healthy`, `stale_data`)
+* `lag_min`, `last_ts_utc`, `ts_utc`
 
 ## 12) Influx Verifikation
 
