@@ -76,7 +76,10 @@ def publish_mqtt(
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Health-check for tigo-ingest + Influx writes")
+    ap = argparse.ArgumentParser(
+        description="Health-check for tigo-ingest + Influx writes",
+        epilog="Exit codes: 0=OK, 2=CRIT (service/data checks failed), 1=runtime/usage error.",
+    )
     ap.add_argument("--service", default="tigo-ingest.service")
     ap.add_argument("--db", default="bms")
     ap.add_argument("--rp", default="autogen")

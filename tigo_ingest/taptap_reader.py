@@ -18,6 +18,21 @@ def _parse_dt(s: str) -> datetime:
     return datetime.fromisoformat(s)
 
 
+def _normalize_address(v) -> str | None:
+    if v is None:
+        return None
+    if isinstance(v, int):
+        return str(v)
+    # Newer taptap payloads may emit address as byte array, e.g. [4,192,...]
+    if isinstance(v, list):
+        try:
+            parts = [int(x) & 0xFF for x in v]
+            return "".join(f"{x:02x}" for x in parts)
+        except Exception:
+            return str(v)
+    return str(v)
+
+
 @dataclass(frozen=True)
 class PowerReport:
     timestamp: datetime
@@ -117,16 +132,3 @@ async def run_taptap_cmd(cmd: list[str]):
             except asyncio.TimeoutError:
                 proc.kill()
                 await proc.wait()
-    def _normalize_address(v) -> str | None:
-        if v is None:
-            return None
-        if isinstance(v, int):
-            return str(v)
-        # Newer taptap payloads may emit address as byte array, e.g. [4,192,...]
-        if isinstance(v, list):
-            try:
-                parts = [int(x) & 0xFF for x in v]
-                return "".join(f"{x:02x}" for x in parts)
-            except Exception:
-                return str(v)
-        return str(v)
