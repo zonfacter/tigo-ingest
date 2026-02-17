@@ -2,9 +2,13 @@
 
 ## Unreleased
 
+## v1.1.1
+
+* Fix: `NameError` bei `_normalize_address` beseitigt (Tigo-Payload Parsing schreibt wieder stabil in Influx)
+* Fix: `gateway.address` / `node.address` auch als Byte-Array robust normalisiert
 * Neu: Health-Check kann Status als MQTT JSON (`OK`/`CRIT`) publizieren (`TIGO_HEALTH_MQTT_*`)
-* Service: `tigo-ingest-healthcheck.service` liest jetzt optional `.env` via `EnvironmentFile`
-* Doku: README + Setup um MQTT Alerting fuer Health-Check erweitert
+* Service: `tigo-ingest-healthcheck.service` liest optional `.env` via `EnvironmentFile`
+* Doku/CLI: Exit-Codes fuer Healthcheck klar dokumentiert (`0=OK`, `2=CRIT`, `1=Runtime/Usage`)
 
 ## v1.1.0
 
